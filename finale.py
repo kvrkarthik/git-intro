@@ -5,13 +5,11 @@ import numpy as np
 import os
 import pytesseract
 from skimage.metrics import structural_similarity as ssim
-
-# Use relative path to avoid platform issues
-actual_image_path = "confusionMatrix.jpg"
-
-pytesseract.pytesseract.tesseract_cmd = r"D:\GenAI\tesseract.exe"
+actual_image_path = os.path.join("D:\\GenAI", "confusionMatrix.jpg")
+# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe' # Adjust if needed
 
 def preprocess_image_ocr(image_path):
+    """Applies preprocessing to improve OCR."""
     try:
         img = cv2.imread(image_path)
         if img is None:
@@ -28,6 +26,7 @@ def preprocess_image_ocr(image_path):
         return None
 
 def extract_labels(image_path):
+    """Extracts labels from the handwritten confusion matrix using OCR."""
     processed_image = preprocess_image_ocr(image_path)
     if processed_image is None:
         return {}
@@ -54,10 +53,11 @@ def extract_labels(image_path):
     return extracted_info
 
 def compare_labels(extracted_labels, expected_labels):
+    """Compares extracted labels with expected labels."""
     match_count = 0
     for expected_label_base in ["trueclass", "predictedclass", "positive", "negative", "tp", "fp", "fn", "tn"]:
         found = False
-        for _, extracted_label_value in extracted_labels.items():
+        for extracted_label_key, extracted_label_value in extracted_labels.items():
             cleaned_expected = expected_label_base.lower().replace(" ", "")
             cleaned_extracted = extracted_label_value.lower().replace(" ", "")
             if cleaned_expected in cleaned_extracted or cleaned_extracted in cleaned_expected:
@@ -66,39 +66,40 @@ def compare_labels(extracted_labels, expected_labels):
                 break
         if not found:
             st.warning(f"Label related to '{expected_label_base}' not clearly found.")
+
     accuracy = match_count / len(expected_labels)
-    return accuracy >= 0.7
+    return accuracy >= 0.7 # Adjust tolerance as needed
 
 def preprocess_image_ssim(image_path):
+    """Applies preprocessing for structural similarity comparison."""
     try:
         img = cv2.imread(image_path)
         if img is None:
             st.error(f"Error: Could not open image at {image_path}")
             return None
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (500, 500))
+        resized = cv2.resize(gray, (500, 500)) # Standardize size
         return resized
     except Exception as e:
         st.error(f"Preprocessing Error (SSIM): {e}")
         return None
 
 def compare_structure(uploaded_path, actual_path):
+    """Compares the structural similarity of the two images."""
     img1 = preprocess_image_ssim(uploaded_path)
     img2 = preprocess_image_ssim(actual_path)
+
     if img1 is None or img2 is None:
         return 0.0
-    return ssim(img1, img2)
 
-# ---------------- UI ----------------
+    score = ssim(img1, img2)
+    return score
+
 st.title("Handwritten vs. Actual Confusion Matrix Checker")
 
-try:
-    actual_image = Image.open(actual_image_path)
-    st.subheader("Actual Confusion Matrix:")
-    st.image(actual_image, caption="Reference Confusion Matrix", use_container_width=True)
-except Exception as e:
-    st.error(f"Failed to load actual image. Error: {e}")
-    st.stop()
+actual_image = Image.open(actual_image_path)
+st.subheader("Actual Confusion Matrix:")
+st.image(actual_image, caption="Reference Confusion Matrix", use_container_width=True)
 
 uploaded_file = st.file_uploader("Upload your handwritten confusion matrix image...", type=["png", "jpg", "jpeg"])
 
@@ -121,11 +122,14 @@ if uploaded_file is not None:
     structure_similarity = compare_structure(uploaded_image_path, actual_image_path)
     st.subheader(f"Structural Similarity: {structure_similarity:.2f}")
 
-    if labels_match and structure_similarity >= 0.6:
-        st.success("✅ The uploaded handwritten confusion matrix is likely similar to the actual one.")
+    label_threshold = 0.7
+    structure_threshold = 0.6 # Adjust as needed
+
+    if labels_match and structure_similarity >= structure_threshold:
+        st.success("The uploaded handwritten confusion matrix is likely similar to the actual one.")
     elif labels_match:
-        st.warning("⚠️ Labels match but structure differs.")
+        st.warning("The labels seem to match, but the overall structure has some differences.")
     else:
-        st.error("❌ The uploaded matrix doesn't match the reference.")
+        st.error("The uploaded handwritten confusion matrix does not appear to be similar to the actual one.")
 
     os.remove(uploaded_image_path)
