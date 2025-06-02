@@ -9,8 +9,7 @@ from skimage.metrics import structural_similarity as ssim
 # Use relative path to avoid platform issues
 actual_image_path = "confusionMatrix.jpg"
 
-# Uncomment and update if running locally
-# pytesseract.pytesseract.tesseract_cmd = r"D:\GenAI\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"D:\GenAI\tesseract.exe"
 
 def preprocess_image_ocr(image_path):
     try:
