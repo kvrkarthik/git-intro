@@ -6,7 +6,7 @@ import os
 import pytesseract
 from skimage.metrics import structural_similarity as ssim
 actual_image_path = "confusionMatrix.jpg"
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\KARTHIK\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = r"C:/Users/KARTHIK/AppData/Local/Programs/Tesseract-OCR/tesseract.exe"
 def preprocess_image_ocr(image_path):
     """Applies preprocessing to improve OCR."""
     try:
