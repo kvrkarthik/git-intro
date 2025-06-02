@@ -5,7 +5,7 @@ import numpy as np
 import os
 import pytesseract
 from skimage.metrics import structural_similarity as ssim
-actual_image_path = "D:\GenAI\confusionMatrix.jpg"
+actual_image_path = "confusionMatrix.jpg"
 pytesseract.pytesseract.tesseract_cmd = r"D:\GenAI\tesseract.exe" # Adjust if needed
 
 def preprocess_image_ocr(image_path):
